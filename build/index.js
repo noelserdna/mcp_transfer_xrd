@@ -8,6 +8,7 @@ const server = new McpServer({
 }, {
     capabilities: {
         tools: {},
+        prompts: {},
     },
 });
 // Create RadixConnect manager class
@@ -67,72 +68,6 @@ const XrdTransactionSchema = {
     amount: z.string().describe("Cantidad de XRD a transferir"),
     message: z.string().optional().describe("Mensaje opcional para la transacción")
 };
-server.tool("echo", "Repite el texto que recibe como entrada", {
-    text: {
-        type: "string",
-        description: "Texto a repetir",
-    },
-}, async ({ text }) => {
-    return {
-        content: [
-            {
-                type: "text",
-                text: `Echo: ${text}`,
-            },
-        ],
-    };
-});
-server.tool("generar_deep_link_160xrd", "Genera el deep link específico para enviar 160 XRD entre las cuentas predefinidas", {}, async () => {
-    try {
-        const fromAddress = "account_tdx_2_12x02tahx6ay6n7sgz094lm7f0rec47skskct400t3epsfnmtlktxwm";
-        const toAddress = "account_tdx_2_128g70quz3ugxqrj94s7j0uc4xy8jeygs0vutjfamn30urnxn3s52ct";
-        const amount = "160";
-        const resourceAddress = "resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc";
-        const manifest = `
-CALL_METHOD
-    Address("${fromAddress}")
-    "withdraw"
-    Address("${resourceAddress}")
-    Decimal("${amount}")
-;
-TAKE_FROM_WORKTOP
-    Address("${resourceAddress}")
-    Decimal("${amount}")
-    Bucket("bucket1")
-;
-CALL_METHOD
-    Address("${toAddress}")
-    "try_deposit_or_abort"
-    Bucket("bucket1")
-    Enum<0u8>()
-;`.trim();
-        const generatedDeepLink = await new Promise((resolve, reject) => {
-            radixManager.onDeepLink((deepLink) => {
-                resolve(deepLink);
-            });
-            radixManager.sendTransactionRequest(manifest, `Transferencia de ${amount} XRD`)
-                .catch(reject);
-        });
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: generatedDeepLink,
-                },
-            ],
-        };
-    }
-    catch (error) {
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-                },
-            ],
-        };
-    }
-});
 server.tool("xrd_transaccion", "Genera un deep link para realizar una transacción de XRD en Stokenet", XrdTransactionSchema, async (params) => {
     try {
         // Debug logging
@@ -188,6 +123,58 @@ CALL_METHOD
             ],
         };
     }
+});
+server.prompt("transferir_xrd", "Transferir XRD entre wallets", {
+    fromAddress: z.string().describe("Dirección de la wallet origen (debe ser una dirección válida de Stokenet que comience con 'account_tdx_2_')"),
+    toAddress: z.string().describe("Dirección de la wallet destino (debe ser una dirección válida de Stokenet que comience con 'account_tdx_2_')"),
+    amount: z.string().describe("Cantidad de XRD a transferir (ejemplo: 10.5, 1, 0.1)"),
+    message: z.string().optional().describe("Mensaje opcional para la transferencia")
+}, async (args) => {
+    const { fromAddress, toAddress, amount, message } = args;
+    return {
+        messages: [
+            {
+                role: "user",
+                content: {
+                    type: "text",
+                    text: `# Transferir XRD en Stokenet
+
+¡Perfecto! Vamos a crear una transferencia sencilla de XRD entre wallets en la red Stokenet.
+
+## Datos para la transferencia:
+
+${fromAddress ? `✅ **Wallet Origen**: ${fromAddress}` : '❌ **Wallet Origen**: *Requerido*'}
+${toAddress ? `✅ **Wallet Destino**: ${toAddress}` : '❌ **Wallet Destino**: *Requerido*'}  
+${amount ? `✅ **Cantidad**: ${amount} XRD` : '❌ **Cantidad**: *Requerido*'}
+${message ? `📝 **Mensaje**: ${message}` : '📝 **Mensaje**: Sin mensaje'}
+
+## Instrucciones:
+
+1. **Wallet Origen**: Proporciona la dirección de tu wallet desde la cual quieres enviar XRD
+   - Formato: \`account_tdx_2_...\`
+   - Ejemplo: \`account_tdx_2_1289zm062j788dwrjefqkfgfeea5tkkdnh8htqhdrzdvjkql4kxceql\`
+
+2. **Wallet Destino**: Proporciona la dirección de la wallet que recibirá los XRD  
+   - Formato: \`account_tdx_2_...\`
+   - Ejemplo: \`account_tdx_2_128evrrwfp8gj9240qq0m06ukhwaj2cmejluxxreanzjwq62hdkqlq\`
+
+3. **Cantidad**: Especifica cuántos XRD quieres transferir
+   - Ejemplos: \`10\`, \`5.5\`, \`0.1\`
+
+4. **Mensaje** (opcional): Agrega una nota descriptiva para la transferencia
+
+## ¿Qué sucede después?
+
+Una vez que proporciones todos los datos requeridos, se generará un **deep link** que podrás usar para:
+- Abrir Radix Wallet móvil automáticamente
+- Revisar los detalles de la transacción
+- Firmar y confirmar la transferencia
+
+¿Tienes todos los datos listos? ¡Proporciónalos y crearemos tu transferencia XRD!`
+                }
+            }
+        ]
+    };
 });
 async function main() {
     const transport = new StdioServerTransport();

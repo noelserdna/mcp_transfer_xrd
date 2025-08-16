@@ -14,6 +14,7 @@ const server = new McpServer(
   {
     capabilities: {
       tools: {},
+      prompts: {},
     },
   },
 );
@@ -154,6 +155,65 @@ CALL_METHOD
       };
     }
   },
+);
+
+server.prompt(
+  "transferir_xrd",
+  "Transferir XRD entre wallets",
+  {
+    fromAddress: z.string().describe("Dirección de la wallet origen (debe ser una dirección válida de Stokenet que comience con 'account_tdx_2_')"),
+    toAddress: z.string().describe("Dirección de la wallet destino (debe ser una dirección válida de Stokenet que comience con 'account_tdx_2_')"),
+    amount: z.string().describe("Cantidad de XRD a transferir (ejemplo: 10.5, 1, 0.1)"),
+    message: z.string().optional().describe("Mensaje opcional para la transferencia")
+  },
+  async (args) => {
+    const { fromAddress, toAddress, amount, message } = args;
+    
+    return {
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `# Transferir XRD en Stokenet
+
+¡Perfecto! Vamos a crear una transferencia sencilla de XRD entre wallets en la red Stokenet.
+
+## Datos para la transferencia:
+
+${fromAddress ? `✅ **Wallet Origen**: ${fromAddress}` : '❌ **Wallet Origen**: *Requerido*'}
+${toAddress ? `✅ **Wallet Destino**: ${toAddress}` : '❌ **Wallet Destino**: *Requerido*'}  
+${amount ? `✅ **Cantidad**: ${amount} XRD` : '❌ **Cantidad**: *Requerido*'}
+${message ? `📝 **Mensaje**: ${message}` : '📝 **Mensaje**: Sin mensaje'}
+
+## Instrucciones:
+
+1. **Wallet Origen**: Proporciona la dirección de tu wallet desde la cual quieres enviar XRD
+   - Formato: \`account_tdx_2_...\`
+   - Ejemplo: \`account_tdx_2_1289zm062j788dwrjefqkfgfeea5tkkdnh8htqhdrzdvjkql4kxceql\`
+
+2. **Wallet Destino**: Proporciona la dirección de la wallet que recibirá los XRD  
+   - Formato: \`account_tdx_2_...\`
+   - Ejemplo: \`account_tdx_2_128evrrwfp8gj9240qq0m06ukhwaj2cmejluxxreanzjwq62hdkqlq\`
+
+3. **Cantidad**: Especifica cuántos XRD quieres transferir
+   - Ejemplos: \`10\`, \`5.5\`, \`0.1\`
+
+4. **Mensaje** (opcional): Agrega una nota descriptiva para la transferencia
+
+## ¿Qué sucede después?
+
+Una vez que proporciones todos los datos requeridos, se generará un **deep link** que podrás usar para:
+- Abrir Radix Wallet móvil automáticamente
+- Revisar los detalles de la transacción
+- Firmar y confirmar la transferencia
+
+¿Tienes todos los datos listos? ¡Proporciónalos y crearemos tu transferencia XRD!`
+          }
+        }
+      ]
+    };
+  }
 );
 
 async function main() {
