@@ -7,7 +7,13 @@
       "Bash(timeout 5 npm start)",
       "Bash(npm test)",
       "Bash(rm:*)",
-      "Bash(timeout 3 npm start)"
+      "Bash(timeout 3 npm start)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(npm start)",
+      "Bash(npx vitest run:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
