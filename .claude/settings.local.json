@@ -17,9 +17,28 @@
       "Bash(gh repo create:*)",
       "Bash(gh auth:*)",
       "Bash(git rm:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(dir:*)",
+      "Bash(powershell.exe:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\andre\\.claude"
+    ]
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -ExecutionPolicy Bypass -File \"C:\\Users\\andre\\.claude\\notification-sound.ps1\""
+          }
+        ]
+      }
+    ]
   }
 }

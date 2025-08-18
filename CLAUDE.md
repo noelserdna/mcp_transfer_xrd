@@ -4,84 +4,87 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a simple MCP (Model Context Protocol) server implementation in TypeScript that runs over stdio. The server provides basic MCP functionality with an echo tool for testing and a RadixDLT transaction tool for generating mobile wallet deep links. It uses the @modelcontextprotocol/sdk library and @radixdlt/radix-dapp-toolkit, built with TypeScript and tested with Vitest.
+This is an MCP (Model Context Protocol) server implementation in TypeScript that provides RadixDLT blockchain integration. The server runs over stdio and enables XRD token transfers on the Stokenet testnet through mobile wallet deep links. It uses @modelcontextprotocol/sdk, radix-connect, and Zod for validation.
 
 ## Development Commands
 
-### Build
+### Build and Start
 ```bash
-npm run build
+npm run build        # Compile TypeScript to build/ directory
+npm start           # Run compiled MCP server on stdio
 ```
-Compiles TypeScript to JavaScript in the `build/` directory.
-
-### Start Server
-```bash
-npm start
-```
-Runs the compiled MCP server on stdio. The server will output "Simple MCP Server running on stdio" to stderr when successfully started.
 
 ### Testing
 ```bash
-npm test              # Run all tests
-npm run test:watch    # Run tests in watch mode
-npm run test:ui       # Run tests with UI interface
+npm test            # Run all tests
+npm run test:watch  # Run tests in watch mode  
+npm run test:ui     # Run tests with UI interface
 ```
 
-The test suite includes:
-- Integration tests for server startup and JSON-RPC communication
-- Unit tests for the echo tool functionality
-- Edge case testing (empty text, unicode, special characters)
+### Running Single Tests
+```bash
+npx vitest tests/server.test.ts      # Run server integration tests
+npx vitest tests/echo-tool.test.ts   # Run echo tool unit tests
+```
 
 ## Architecture
 
-### Core Components
+### MCP Server Structure (src/index.ts)
 
-- **src/index.ts**: Main MCP server implementation using @modelcontextprotocol/sdk
-  - Creates McpServer instance with stdio transport
-  - Registers the echo and xrd_transaccion tools
-  - Handles server initialization and connection
+The server implements the MCP protocol with:
+
+1. **McpServer Instance**: Configures server capabilities and metadata
+2. **RadixConnectManager Class**: Handles Radix wallet integration
+   - Creates relay transport for deep link generation
+   - Manages transaction request callbacks
+   - Generates transaction manifests for XRD transfers
+3. **Tool Registration**: Registers `xrd_transaccion` tool with Zod validation
+4. **Prompt Registration**: Registers `transferir_xrd` prompt for guided transfers
+
+### RadixDLT Integration
+
+**Network Configuration**:
+- Target: Stokenet (testnet) - networkId: 2
+- XRD Resource: `resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc`
+- dApp Definition: `account_tdx_2_128g70quz3ugxqrj94s7j0uc4xy8jeygs0vutjfamn30urnxn3s52ct`
+- Origin: `https://wellradix.pages.dev/`
+
+**Transaction Manifest Pattern**:
+- Uses `withdraw` from source account
+- Creates worktop bucket for XRD amount
+- Calls `try_deposit_or_abort` on destination account
 
 ### Tool Implementation
 
-The server implements two tools:
+**xrd_transaccion**: Generates deep links for XRD transfers on Stokenet
+- Parameters: `fromAddress`, `toAddress`, `amount`, `message` (optional)
+- Validation: Zod schemas with Spanish descriptions
+- Returns: Deep link string for Radix Wallet mobile app
 
-- **echo**: Takes a text parameter and returns "Echo: {text}"
-  - Defined at index.ts:17-36
-  - Parameters: `text` (string)
-  - Returns MCP-formatted content with text response
+**transferir_xrd** (Prompt): Interactive guide for XRD transfers
+- Provides Spanish instructions for wallet addresses and amounts
+- Explains deep link workflow and wallet integration
+- Returns formatted guidance with validation status
 
-- **xrd_transaccion**: Genera deep links para transacciones XRD en Stokenet
-  - Defined at index.ts:38-123
-  - Parameters: 
-    - `fromAddress` (string): Dirección de billetera origen
-    - `toAddress` (string): Dirección de billetera destino
-    - `amount` (string): Cantidad de XRD a transferir
-    - `message` (string, opcional): Mensaje para la transacción
-  - Returns: Deep link para abrir Radix Wallet móvil y firmar la transacción
-  - Configuración fija:
-    - Network: Stokenet (networkId: 2)
-    - dAppDefinitionAddress: account_tdx_2_128g70quz3ugxqrj94s7j0uc4xy8jeygs0vutjfamn30urnxn3s52ct
-    - Origin: https://wellradix.pages.dev/
+### Testing Architecture
 
-### Testing Strategy
+**Integration Tests** (tests/server.test.ts):
+- Spawns actual server process using child_process
+- Tests server startup and stderr output validation
+- Tests JSON-RPC message handling with MCP protocol
+- Builds project before test execution
 
-- **tests/server.test.ts**: Integration tests that spawn actual server process
-  - Tests server startup and JSON-RPC initialization
-  - Uses child_process.spawn to test real server behavior
-- **tests/echo-tool.test.ts**: Unit tests for echo tool logic
-  - Tests isolated tool function without server overhead
-  - Covers edge cases and various input types
+**Configuration**:
+- Vitest with Node environment and 10s timeout
+- Coverage reporting with v8 provider  
+- ESM modules with TypeScript strict mode
+- Test files pattern: `tests/**/*.test.ts`
 
-### Configuration
+## MCP Protocol Details
 
-- **TypeScript**: ES2020 target, ESNext modules, strict mode enabled
-- **Vitest**: Node environment, 10s timeout, coverage reporting with v8
-- **Module System**: ESM (type: "module" in package.json)
-
-## MCP Protocol Integration
-
-This server implements the MCP protocol over stdio transport:
-- Accepts JSON-RPC messages on stdin
-- Responds with JSON-RPC messages on stdout  
-- Uses stderr for server logging/status messages
-- Protocol version: Compatible with MCP SDK 1.0.0
+The server uses stdio transport for MCP communication:
+- **stdin**: Receives JSON-RPC requests from MCP clients
+- **stdout**: Sends JSON-RPC responses back to clients
+- **stderr**: Server logging and status messages
+- **Protocol**: Compatible with MCP SDK 1.0.0 and 2025-06-18 specification
+- recuerda darme todos los mensajes en español
