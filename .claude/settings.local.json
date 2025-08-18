@@ -15,7 +15,9 @@
       "Bash(npx vitest run:*)",
       "Bash(git add:*)",
       "Bash(gh repo create:*)",
-      "Bash(gh auth:*)"
+      "Bash(gh auth:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
