@@ -21,7 +21,16 @@
       "Bash(git branch:*)",
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(dir:*)",
-      "Bash(powershell.exe:*)"
+      "Bash(powershell.exe:*)",
+      "WebFetch(domain:radix-babylon-gateway-api.redoc.ly)",
+      "WebFetch(domain:radix-babylon-gateway-api.redoc.ly)",
+      "WebFetch(domain:docs.radixdlt.com)",
+      "WebFetch(domain:docs.radixdlt.com)",
+      "WebFetch(domain:docs-babylon.radixdlt.com)",
+      "mcp__sequencial-thinking__sequentialthinking",
+      "Bash(npm test:*)",
+      "Bash(node:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": [],

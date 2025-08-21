@@ -88,3 +88,49 @@ The server uses stdio transport for MCP communication:
 - **stderr**: Server logging and status messages
 - **Protocol**: Compatible with MCP SDK 1.0.0 and 2025-06-18 specification
 - recuerda darme todos los mensajes en español
+
+## Documentación de Investigación
+
+### Carpeta `investigaciones/`
+Contiene toda la documentación técnica generada por sub-agentes de investigación durante el desarrollo del proyecto. Consultar siempre estos archivos antes de implementar nuevas funcionalidades relacionadas:
+
+**API y Conexiones**:
+- `investigaciones/radix-gateway-api.md` - Documentación completa de Radix Gateway API actualizada con hallazgos de GitHub
+- `investigaciones/api-implementation-details.md` - Decisiones de implementación y patrones recomendados
+
+**GitHub Integration & Migration Path (NUEVAS)**:
+- `investigaciones/radix-dapp-toolkit-integration.md` - **CRÍTICO**: Análisis de migración de radix-connect a radix-dapp-toolkit oficial
+- `investigaciones/official-examples-analysis.md` - Patterns y código extraíble de repositorios oficiales RadixDLT
+- `investigaciones/github-integration-summary.md` - **ROADMAP**: Síntesis consolidada con plan de mejoras implementables
+
+**Validación y Verificación**:
+- `investigaciones/balance-verification-methods.md` - Métodos de verificación de balances XRD, comparación de opciones y estrategias de cache
+- `investigaciones/address-validation-patterns.md` - Algoritmos de validación de direcciones Stokenet, formatos y checksums
+- `investigaciones/validation-implementation.md` - Patrones implementados y casos de test
+
+**Manejo de Errores**:
+- `investigaciones/error-handling-strategies.md` - Códigos de error, mensajes localizados en español y estrategias de recovery
+
+**Optimización y Testing**:
+- `investigaciones/performance-optimization.md` - Optimizaciones implementadas, benchmarks y recomendaciones
+- `investigaciones/testing-strategies.md` - Estrategias de testing, casos de carga y validación de performance
+
+### Uso Recomendado
+
+**PRIORIDAD ALTA - Migration Path**:
+1. **Para mejoras inmediatas**: Leer `github-integration-summary.md` primero - contiene roadmap completo
+2. **Para migración técnica**: Consultar `radix-dapp-toolkit-integration.md` - análisis crítico radix-connect → RDT
+3. **Para implementación**: Usar código de `official-examples-analysis.md` - patterns probados y extraíbles
+
+**Durante Desarrollo**:
+1. **Antes de implementar**: Consultar archivos relevantes en `investigaciones/`
+2. **Durante desarrollo**: Seguir patrones y recomendaciones documentadas
+3. **Para troubleshooting**: Gateway API actualizada y error handling strategies
+4. **Nuevas investigaciones**: Generar archivos MD usando el formato estándar definido en `investigaciones/README.md`
+5. **Futuras funcionalidades**: Actualizar referencias en este CLAUDE.md cuando se agreguen nuevas investigaciones
+
+**NOTA IMPORTANTE**: Las investigaciones de GitHub Integration (Fase 1) proporcionan un plan completo de migración que debe ser consultado antes de realizar cambios significativos al código actual.
+
+### Carpeta `task/`
+Contiene planes detallados de implementación y seguimiento de progreso:
+- `task/verification-helpers-plan.md` - Plan completo para implementar helpers de verificación XRD con sub-agentes
