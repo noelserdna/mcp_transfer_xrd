@@ -149,5 +149,4 @@ Contiene toda la documentación técnica generada por sub-agentes de investigaci
 **NOTA IMPORTANTE**: Las investigaciones de GitHub Integration (Fase 1) proporcionan un plan completo de migración que debe ser consultado antes de realizar cambios significativos al código actual.
 
 ### Carpeta `task/`
-Contiene planes detallados de implementación y seguimiento de progreso:
-- `task/verification-helpers-plan.md` - Plan completo para implementar helpers de verificación XRD con sub-agentes
+Contiene planes detallados de implementación y seguimiento de progreso
