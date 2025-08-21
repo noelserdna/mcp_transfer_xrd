@@ -78,14 +78,9 @@ export class RadixAPIHelper {
 
     const result = await this.retryOperation(async () => {
       const requestBody = {
-        network_identifier: {
-          network: STOKENET_NETWORK_ID
-        },
-        entity_identifier: {
-          address: address
-        },
+        addresses: [address],
         opt_ins: {
-          fungible_resources: true,
+          fungibles: true,
           explicit_metadata: ["name", "symbol"]
         }
       };
@@ -148,14 +143,9 @@ export class RadixAPIHelper {
 
     try {
       const requestBody = {
-        network_identifier: {
-          network: STOKENET_NETWORK_ID
-        },
-        entity_identifier: {
-          address: address
-        },
+        addresses: [address],
         opt_ins: {
-          fungible_resources: true
+          fungibles: true
         }
       };
 
@@ -188,14 +178,9 @@ export class RadixAPIHelper {
   async getAccountBalance(address: string): Promise<AccountBalance> {
     const result = await this.retryOperation(async () => {
       const requestBody = {
-        network_identifier: {
-          network: STOKENET_NETWORK_ID
-        },
-        entity_identifier: {
-          address: address
-        },
+        addresses: [address],
         opt_ins: {
-          fungible_resources: true,
+          fungibles: true,
           explicit_metadata: ["name", "symbol"]
         }
       };
