@@ -7,6 +7,8 @@ import { AddressValidator } from './helpers/address-validator.js';
 import { BalanceChecker } from './helpers/balance-checker.js';
 import { RadixAPIHelper } from './helpers/radix-api.js';
 import { DecimalUtils, ErrorType } from './types/radix-types.js';
+// Importar helper de generación QR (Nueva funcionalidad)
+import { qrGenerator } from './helpers/qr-generator.js';
 const server = new McpServer({
     name: "simple-mcp-server",
     version: "1.0.0",
@@ -183,6 +185,61 @@ CALL_METHOD
         };
     }
 });
+// Define Zod schema for QR generation parameters
+const DeepLinkToQRSchema = {
+    deeplink: z.string().describe("Deep link de Radix Wallet para convertir a código QR"),
+    formato: z.enum(['svg', 'png', 'both']).optional().describe("Formato de salida: svg, png o both (default: both)"),
+    tamaño: z.number().min(32).max(2048).optional().describe("Tamaño en píxeles para PNG (default: 256)")
+};
+server.tool("deeplink_to_qr", "Convierte un deep link de Radix Wallet a código QR en formato SVG y/o PNG", DeepLinkToQRSchema, async (params) => {
+    try {
+        console.error("DEBUG - Generando QR para:", JSON.stringify(params, null, 2));
+        const { deeplink, formato = 'both', tamaño = 256 } = params;
+        // Usar el helper de generación QR
+        const result = await qrGenerator.generateQR({
+            deeplink,
+            formato,
+            tamaño
+        });
+        // Construir respuesta informativa
+        const formatosStr = result.metadatos.formatos_generados.join(' y ');
+        let responseText = `✅ **Código QR generado exitosamente**\n\n`;
+        responseText += `📱 **Deep Link Original:** ${result.metadatos.url_original}\n`;
+        responseText += `📊 **Formatos generados:** ${formatosStr}\n`;
+        responseText += `📐 **Tamaño PNG:** ${result.metadatos.tamaño_png}px\n`;
+        responseText += `⏰ **Generado:** ${new Date(result.metadatos.timestamp).toLocaleString('es-ES')}\n\n`;
+        if (result.svg) {
+            responseText += `**📄 SVG Code:**\n\`\`\`svg\n${result.svg}\n\`\`\`\n\n`;
+        }
+        if (result.png_base64) {
+            responseText += `**🖼️ PNG Base64:**\n\`\`\`\n${result.png_base64}\n\`\`\`\n\n`;
+        }
+        responseText += `💡 **Instrucciones de uso:**\n`;
+        responseText += `• **SVG**: Copia el código SVG y úsalo en aplicaciones web\n`;
+        responseText += `• **PNG Base64**: Úsalo como \`data:image/png;base64,<código>\` en HTML\n`;
+        responseText += `• **Escaneo móvil**: Ambos formatos son escaneables con cualquier lector QR\n`;
+        responseText += `• **Radix Wallet**: Al escanear, abrirá directamente la transacción en Radix Wallet`;
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: responseText,
+                },
+            ],
+        };
+    }
+    catch (error) {
+        console.error("DEBUG - Error generando QR:", error);
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `❌ **Error generando código QR**\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\n💡 **Verificaciones:**\n• Asegúrate de que el deep link sea válido\n• El deep link debe ser de Radix Wallet (radixwallet:// o https://wallet.radixdlt.com/)\n• El tamaño para PNG debe estar entre 32 y 2048 píxeles`,
+                },
+            ],
+        };
+    }
+});
 server.prompt("transferir_xrd", "Transferir XRD entre wallets con validaciones automáticas", {
     fromAddress: z.string().describe("Dirección de la wallet origen (debe ser una dirección válida de Stokenet que comience con 'account_tdx_2_')"),
     toAddress: z.string().describe("Dirección de la wallet destino (debe ser una dirección válida de Stokenet que comience con 'account_tdx_2_')"),
@@ -247,7 +304,31 @@ Una vez que proporciones todos los datos requeridos:
 - **Ahorra tiempo**: Identificamos problemas sin abrir la wallet
 - **Mayor seguridad**: Validaciones adicionales antes de firmar
 
-¿Tienes todos los datos listos? ¡Proporciónalos y crearemos tu transferencia XRD con validaciones automáticas!`
+## 📱 Generar Código QR (Paso Opcional)
+
+Una vez que tengas tu deep link de transferencia XRD, puedes convertirlo a código QR para facilitar el escaneo desde dispositivos móviles:
+
+**🔧 Tool disponible**: \`deeplink_to_qr\`
+
+**✨ Características**:
+- 📊 Genera códigos QR en formato **SVG** (escalable) y **PNG** (universal)
+- 🔍 Optimizado para deep links largos de Radix Wallet
+- 📱 Base64 ready para integración en aplicaciones web
+- ⚡ Generación rápida y confiable
+
+**💡 Casos de uso**:
+- 📲 **Compartir transacciones**: Genera QR para que otros escaneen y ejecuten
+- 🖥️ **Aplicaciones web**: Integra QR en interfaces web como \`data:image/png;base64,<código>\`
+- 📄 **Documentación**: Inserta QR escalables (SVG) en documentos
+- 🔄 **Backup móvil**: Guarda QR de transacciones frecuentes
+
+**📋 Ejemplo de uso**:
+1. Primero usa \`xrd_transaccion\` para generar tu deep link
+2. Copia el deep link obtenido
+3. Usa \`deeplink_to_qr\` con tu deep link para generar el QR
+4. ¡Listo! Tendrás códigos QR en SVG y PNG
+
+¿Tienes todos los datos listos? ¡Proporciónalos y crearemos tu transferencia XRD con validaciones automáticas! Y si quieres, después podrás generar códigos QR para facilitar el uso.`
                 }
             }
         ]

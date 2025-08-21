@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an MCP (Model Context Protocol) server implementation in TypeScript that provides RadixDLT blockchain integration. The server runs over stdio and enables XRD token transfers on the Stokenet testnet through mobile wallet deep links. It uses @modelcontextprotocol/sdk, radix-connect, and Zod for validation.
+This is an MCP (Model Context Protocol) server implementation in TypeScript that provides RadixDLT blockchain integration. The server runs over stdio and enables XRD token transfers on the Stokenet testnet through mobile wallet deep links. It uses @modelcontextprotocol/sdk, radix-connect, Zod for validation, and qrcode library for QR generation.
 
 ## Development Commands
 
@@ -23,8 +23,9 @@ npm run test:ui     # Run tests with UI interface
 
 ### Running Single Tests
 ```bash
-npx vitest tests/server.test.ts      # Run server integration tests
-npx vitest tests/echo-tool.test.ts   # Run echo tool unit tests
+npx vitest tests/server.test.ts           # Run server integration tests
+npx vitest tests/echo-tool.test.ts        # Run echo tool unit tests
+npx vitest tests/deeplink-to-qr.test.ts   # Run QR generation unit tests
 ```
 
 ## Architecture
@@ -38,8 +39,9 @@ The server implements the MCP protocol with:
    - Creates relay transport for deep link generation
    - Manages transaction request callbacks
    - Generates transaction manifests for XRD transfers
-3. **Tool Registration**: Registers `xrd_transaccion` tool with Zod validation
-4. **Prompt Registration**: Registers `transferir_xrd` prompt for guided transfers
+3. **Tool Registration**: Registers `xrd_transaccion` and `deeplink_to_qr` tools with Zod validation
+4. **QRGenerator Helper**: Manages QR code generation with SVG/PNG support
+5. **Prompt Registration**: Registers `transferir_xrd` prompt for guided transfers
 
 ### RadixDLT Integration
 
@@ -61,10 +63,18 @@ The server implements the MCP protocol with:
 - Validation: Zod schemas with Spanish descriptions
 - Returns: Deep link string for Radix Wallet mobile app
 
-**transferir_xrd** (Prompt): Interactive guide for XRD transfers
+**deeplink_to_qr**: Converts Radix Wallet deep links to QR codes
+- Parameters: `deeplink`, `formato` (optional: 'svg', 'png', 'both'), `tamaño` (optional PNG size)
+- Validation: Validates Radix deep link protocols (radixwallet://, wallet.radixdlt.com)
+- Returns: SVG and/or PNG Base64 QR codes with metadata
+- Library: Uses `qrcode` library for robust QR generation
+- Formats: SVG (scalable) and PNG (universal compatibility)
+
+**transferir_xrd** (Prompt): Interactive guide for XRD transfers with QR generation
 - Provides Spanish instructions for wallet addresses and amounts
 - Explains deep link workflow and wallet integration
-- Returns formatted guidance with validation status
+- **NEW**: Includes QR code generation instructions and use cases
+- Returns formatted guidance with validation status and QR options
 
 ### Testing Architecture
 
@@ -73,6 +83,13 @@ The server implements the MCP protocol with:
 - Tests server startup and stderr output validation
 - Tests JSON-RPC message handling with MCP protocol
 - Builds project before test execution
+
+**QR Generation Tests** (tests/deeplink-to-qr.test.ts):
+- Unit tests for QRGenerator class with SVG/PNG generation
+- Deep link validation tests for Radix protocols
+- Format-specific testing (SVG only, PNG only, both)  
+- Error handling and edge cases (invalid links, sizes)
+- Integration testing with different protocols
 
 **Configuration**:
 - Vitest with Node environment and 10s timeout

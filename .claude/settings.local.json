@@ -30,7 +30,9 @@
       "mcp__sequencial-thinking__sequentialthinking",
       "Bash(npm test:*)",
       "Bash(node:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(npx vitest:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": [],
