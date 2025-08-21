@@ -39,9 +39,10 @@ The server implements the MCP protocol with:
    - Creates relay transport for deep link generation
    - Manages transaction request callbacks
    - Generates transaction manifests for XRD transfers
-3. **Tool Registration**: Registers `xrd_transaccion` and `deeplink_to_qr` tools with Zod validation
+3. **Tool Registration**: Registers `xrd_transaccion`, `deeplink_to_qr` and `deeplink_to_qr_local` tools with Zod validation
 4. **QRGenerator Helper**: Manages QR code generation with SVG/PNG support
-5. **Prompt Registration**: Registers `transferir_xrd` prompt for guided transfers
+5. **LocalQRManager Helper**: Manages local PNG file generation for Claude Desktop compatibility
+6. **Prompt Registration**: Registers `transferir_xrd` prompt for guided transfers
 
 ### RadixDLT Integration
 
@@ -70,11 +71,42 @@ The server implements the MCP protocol with:
 - Library: Uses `qrcode` library for robust QR generation
 - Formats: SVG (scalable) and PNG (universal compatibility)
 
+**deeplink_to_qr_local**: Generates QR codes as local PNG files for Claude Desktop compatibility
+- Parameters: `deeplink`, `tamaño` (optional, default: 512px), `calidad` (optional: 'high'), `directorio` (optional)
+- Validation: Strict validation of Radix deep link protocols with enhanced error handling
+- Returns: Local PNG file path with metadata (hash, dimensions, file size, generation time)
+- Directory: Auto-creates `qrimages/` directory with automatic cleanup (7-day retention)
+- Filename: Unique SHA-256 based naming (`qr-{hash}-{timestamp}.png`) prevents duplicates
+- Quality: Optimized for mobile scanning with high error correction level (H)
+- Performance: <300ms generation time, <50KB file size target
+- Compatibility: Resolves Claude Desktop artifact rendering issues with Base64 QR codes
+
 **transferir_xrd** (Prompt): Interactive guide for XRD transfers with QR generation
 - Provides Spanish instructions for wallet addresses and amounts
 - Explains deep link workflow and wallet integration
 - **NEW**: Includes QR code generation instructions and use cases
 - Returns formatted guidance with validation status and QR options
+
+### QR Generation Usage Guide
+
+**When to use `deeplink_to_qr_local`** (Recommended for Claude Desktop):
+- Working in Claude Desktop environment where artifacts need to be rendered
+- Need persistent, reusable QR files for sharing or documentation
+- Require high-quality QR codes optimized for mobile camera scanning
+- Want automatic file management with duplicate prevention
+- Need QR files for external applications or long-term storage
+
+**When to use `deeplink_to_qr`** (Legacy/Base64 format):
+- Working in environments other than Claude Desktop
+- Need embedded SVG/PNG data for direct integration
+- Working with applications that consume Base64 encoded images
+- Require both SVG and PNG formats simultaneously
+- Need smaller output data without file system interaction
+
+**Workflow Recommendation**:
+1. Generate XRD transaction with `xrd_transaccion`
+2. Convert to local QR file with `deeplink_to_qr_local` for Claude Desktop compatibility
+3. Share or render the generated PNG file as needed
 
 ### Testing Architecture
 

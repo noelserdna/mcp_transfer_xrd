@@ -9,6 +9,8 @@ import { RadixAPIHelper } from './helpers/radix-api.js';
 import { DecimalUtils, ErrorType } from './types/radix-types.js';
 // Importar helper de generación QR (Nueva funcionalidad)
 import { qrGenerator } from './helpers/qr-generator.js';
+// Importar nueva funcionalidad QR local (Fase 1.3: QR PNG Local Generation)
+import { localQRManager } from './helpers/local-qr-manager.js';
 const server = new McpServer({
     name: "simple-mcp-server",
     version: "1.0.0",
@@ -191,6 +193,13 @@ const DeepLinkToQRSchema = {
     formato: z.enum(['svg', 'png', 'both']).optional().describe("Formato de salida: svg, png o both (default: both)"),
     tamaño: z.number().min(32).max(2048).optional().describe("Tamaño en píxeles para PNG (default: 256)")
 };
+// Define Zod schema for local QR PNG generation parameters
+const DeepLinkToQRLocalSchema = {
+    deeplink: z.string().describe("Deep link de Radix Wallet para convertir a código QR PNG local"),
+    tamaño: z.number().min(128).max(2048).optional().describe("Tamaño en píxeles para PNG (default: 512, optimizado para escaneado móvil)"),
+    calidad: z.enum(['low', 'medium', 'high', 'max']).optional().describe("Calidad del QR para escaneado móvil (default: high)"),
+    directorio: z.string().optional().describe("Directorio personalizado para guardar archivo (default: qrimages)")
+};
 server.tool("deeplink_to_qr", "Convierte un deep link de Radix Wallet a código QR en formato SVG y/o PNG", DeepLinkToQRSchema, async (params) => {
     try {
         console.error("DEBUG - Generando QR para:", JSON.stringify(params, null, 2));
@@ -235,6 +244,109 @@ server.tool("deeplink_to_qr", "Convierte un deep link de Radix Wallet a código 
                 {
                     type: "text",
                     text: `❌ **Error generando código QR**\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\n💡 **Verificaciones:**\n• Asegúrate de que el deep link sea válido\n• El deep link debe ser de Radix Wallet (radixwallet:// o https://wallet.radixdlt.com/)\n• El tamaño para PNG debe estar entre 32 y 2048 píxeles`,
+                },
+            ],
+        };
+    }
+});
+server.tool("deeplink_to_qr_local", "Genera un código QR como archivo PNG local para deep links de Radix Wallet, compatible con Claude Desktop", DeepLinkToQRLocalSchema, async (params) => {
+    try {
+        console.error("DEBUG - Generando QR PNG local para:", JSON.stringify(params, null, 2));
+        const { deeplink, tamaño = 512, calidad = 'high', directorio } = params;
+        // Validar parámetros específicos para generación local
+        if (tamaño < 128 || tamaño > 2048) {
+            return {
+                content: [{
+                        type: "text",
+                        text: `❌ **Error en tamaño de QR**\n\nEl tamaño debe estar entre 128 y 2048 píxeles. Se recomiendan 512px o más para mejor escaneado móvil.\n\n💡 **Sugerencia**: Usa 512px (default) o 1024px para calidad óptima con cámaras móviles.`
+                    }]
+            };
+        }
+        // Usar el LocalQRManager para generar archivo PNG local
+        const startTime = performance.now();
+        const result = await localQRManager.generateQRLocal(deeplink);
+        const generationTime = Math.round(performance.now() - startTime);
+        // Actualizar metadata con tiempo real
+        result.metadatos.tiempo_generacion_ms = generationTime;
+        // Construir respuesta informativa para Claude Desktop
+        let responseText = `✅ **Archivo QR PNG generado exitosamente**\n\n`;
+        responseText += `📁 **Archivo creado**: \`${result.archivo_path}\`\n`;
+        responseText += `📝 **Nombre**: ${result.nombre_archivo}\n`;
+        responseText += `📊 **Tamaño archivo**: ${(result.tamaño_bytes / 1024).toFixed(1)} KB\n`;
+        responseText += `📐 **Dimensiones**: ${result.metadatos.dimensiones.ancho}×${result.metadatos.dimensiones.alto}px\n`;
+        responseText += `🔗 **Hash único**: ${result.metadatos.hash_unico}\n`;
+        responseText += `⚡ **Tiempo generación**: ${result.metadatos.tiempo_generacion_ms}ms\n`;
+        responseText += `⏰ **Creado**: ${new Date(result.metadatos.timestamp).toLocaleString('es-ES')}\n\n`;
+        responseText += `🎯 **¿Por qué QR PNG local?**\n`;
+        responseText += `• **Compatible con Claude Desktop**: Este archivo PNG es renderizable como artefacto\n`;
+        responseText += `• **Calidad optimizada**: Tamaño ${result.metadatos.dimensiones.ancho}px ideal para escaneado móvil\n`;
+        responseText += `• **Almacenado localmente**: Archivo guardado en tu sistema para reutilización\n`;
+        responseText += `• **Único y persistente**: Hash único evita duplicados, archivo reutilizable\n\n`;
+        responseText += `📱 **Instrucciones de uso**:\n`;
+        responseText += `1. **Escaneo directo**: Usa cualquier app de cámara o lector QR para escanear\n`;
+        responseText += `2. **Radix Wallet**: Al escanear se abrirá directamente la transacción\n`;
+        responseText += `3. **Compartir**: Puedes enviar este archivo PNG a otros dispositivos\n`;
+        responseText += `4. **Reutilizar**: El archivo queda guardado para futuros usos\n\n`;
+        responseText += `💡 **Ventajas vs QR Base64**:\n`;
+        responseText += `• ✅ Compatible con artefactos de Claude Desktop\n`;
+        responseText += `• ✅ No pierde contexto durante renderizado\n`;
+        responseText += `• ✅ Archivo físico reutilizable y compartible\n`;
+        responseText += `• ✅ Mayor calidad para escaneado móvil confiable\n`;
+        responseText += `• ✅ Gestión automática de archivos duplicados\n\n`;
+        responseText += `📂 **Gestión de archivos**: Los archivos se guardan en \`${result.metadatos.directorio}\` con limpieza automática de archivos antiguos (>7 días).`;
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: responseText,
+                },
+            ],
+        };
+    }
+    catch (error) {
+        console.error("DEBUG - Error generando QR PNG local:", error);
+        // Manejo específico de errores de LocalQRManager
+        if (error && typeof error === 'object' && 'code' in error) {
+            const localError = error;
+            let errorMessage = `❌ **Error de generación local**\n\n`;
+            switch (localError.code) {
+                case 'DIRECTORY_ERROR':
+                    errorMessage += `**Problema con directorio**: ${localError.message}\n\n`;
+                    errorMessage += `💡 **Soluciones**:\n`;
+                    errorMessage += `• Verifica permisos de escritura en el directorio del proyecto\n`;
+                    errorMessage += `• Asegúrate de que hay espacio disponible en disco\n`;
+                    errorMessage += `• Intenta usar un directorio personalizado con el parámetro \`directorio\``;
+                    break;
+                case 'FILE_ERROR':
+                    errorMessage += `**Error escribiendo archivo**: ${localError.message}\n\n`;
+                    errorMessage += `💡 **Soluciones**:\n`;
+                    errorMessage += `• Verifica que no hay archivos bloqueados en el directorio\n`;
+                    errorMessage += `• Asegúrate de tener permisos de escritura\n`;
+                    errorMessage += `• Intenta con un nombre de archivo diferente`;
+                    break;
+                case 'GENERATION_ERROR':
+                    errorMessage += `**Error en generación QR**: ${localError.message}\n\n`;
+                    errorMessage += `💡 **Verificaciones**:\n`;
+                    errorMessage += `• Confirma que el deep link sea válido de Radix Wallet\n`;
+                    errorMessage += `• Verifica el formato: debe comenzar con \`radixwallet://\` o \`https://wallet.radixdlt.com/\`\n`;
+                    errorMessage += `• Intenta con un tamaño menor (512px o 256px)`;
+                    break;
+                default:
+                    errorMessage += `**Error desconocido**: ${localError.message}`;
+            }
+            return {
+                content: [{
+                        type: "text",
+                        text: errorMessage
+                    }]
+            };
+        }
+        // Fallback para errores no estructurados
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `❌ **Error generando QR PNG local**\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\n💡 **Alternativa**: Puedes usar la herramienta \`deeplink_to_qr\` para obtener QR en Base64, aunque no sea compatible con artefactos de Claude Desktop.\n\n🔧 **Verificaciones**:\n• Deep link válido de Radix Wallet\n• Permisos de escritura en directorio del proyecto\n• Espacio disponible en disco\n• Tamaño entre 128-2048 píxeles`,
                 },
             ],
         };
