@@ -33,7 +33,8 @@
       "Bash(timeout:*)",
       "Bash(npx vitest:*)",
       "Bash(git checkout:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": [],

@@ -45,6 +45,7 @@ export interface QRLocalMetadata extends QRMetadata {
     alto: number;
   };
   tiempo_generacion_ms: number; // Tiempo de generación en milisegundos
+  fuente_directorio?: string; // Fuente de configuración del directorio
 }
 
 // Configuración para generación QR
