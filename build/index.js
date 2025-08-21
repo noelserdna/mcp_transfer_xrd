@@ -416,29 +416,43 @@ Una vez que proporciones todos los datos requeridos:
 - **Ahorra tiempo**: Identificamos problemas sin abrir la wallet
 - **Mayor seguridad**: Validaciones adicionales antes de firmar
 
-## 📱 Generar Código QR (Paso Opcional)
+## 📱 Generar Código QR (Paso Recomendado)
 
-Una vez que tengas tu deep link de transferencia XRD, puedes convertirlo a código QR para facilitar el escaneo desde dispositivos móviles:
+Una vez que tengas tu deep link de transferencia XRD, **recomendamos encarecidamente** convertirlo a código QR local para una experiencia optimizada en Claude Desktop:
 
-**🔧 Tool disponible**: \`deeplink_to_qr\`
+### 🎯 **Opción Recomendada**: \`deeplink_to_qr_local\` (NUEVO)
 
-**✨ Características**:
-- 📊 Genera códigos QR en formato **SVG** (escalable) y **PNG** (universal)
-- 🔍 Optimizado para deep links largos de Radix Wallet
-- 📱 Base64 ready para integración en aplicaciones web
-- ⚡ Generación rápida y confiable
+**✨ Características Premium**:
+- 🖼️ **Compatible con Claude Desktop**: Archivos PNG renderizables como artefactos sin problemas
+- 📱 **Calidad optimizada**: 512px por defecto, ideal para escaneado móvil confiable
+- 💾 **Archivos persistentes**: Guardado en \`qrimages/\` para reutilización y compartir
+- 🔄 **Gestión inteligente**: Nombres únicos evitan duplicados, limpieza automática
+- ⚡ **Performance superior**: <300ms generación, <50KB archivos, error correction nivel H
 
-**💡 Casos de uso**:
-- 📲 **Compartir transacciones**: Genera QR para que otros escaneen y ejecuten
-- 🖥️ **Aplicaciones web**: Integra QR en interfaces web como \`data:image/png;base64,<código>\`
-- 📄 **Documentación**: Inserta QR escalables (SVG) en documentos
-- 🔄 **Backup móvil**: Guarda QR de transacciones frecuentes
+**💡 Casos de uso ideales**:
+- 📲 **Claude Desktop**: Renderizar QR como artefactos sin pérdida de contexto
+- 💼 **Uso profesional**: Archivos PNG de alta calidad para documentación
+- 🔄 **Reutilización**: Archivos guardados para referencia futura
+- 📤 **Compartir fácil**: Enviar archivos PNG directamente a otros dispositivos
 
-**📋 Ejemplo de uso**:
-1. Primero usa \`xrd_transaccion\` para generar tu deep link
-2. Copia el deep link obtenido
-3. Usa \`deeplink_to_qr\` con tu deep link para generar el QR
-4. ¡Listo! Tendrás códigos QR en SVG y PNG
+### 🔧 **Opción Alternativa**: \`deeplink_to_qr\` (Clásica)
+
+**📊 Características Base64**:
+- 📄 **Formato clásico**: SVG escalable y PNG Base64 para integración web
+- 🖥️ **Aplicaciones web**: Datos embebidos como \`data:image/png;base64,<código>\`
+- 📋 **Múltiples formatos**: SVG + PNG simultáneamente
+- 💻 **Entornos no-Desktop**: Para uso fuera de Claude Desktop
+
+**📋 Workflow Recomendado**:
+1. 🔨 **Generar transacción**: Usa \`xrd_transaccion\` para crear tu deep link
+2. ⭐ **Crear QR local**: Usa \`deeplink_to_qr_local\` para archivo PNG optimizado
+3. 📱 **¡Escanear y usar!**: El archivo PNG es compatible con cualquier lector QR móvil
+
+**🎯 ¿Por qué \`deeplink_to_qr_local\`?**
+- ✅ **Sin problemas de renderizado** en Claude Desktop (resuelve limitaciones Base64)
+- ✅ **Mayor calidad visual** para escaneado móvil
+- ✅ **Persistencia de archivos** para uso posterior
+- ✅ **Optimizado para transacciones Radix** con configuración específica
 
 ¿Tienes todos los datos listos? ¡Proporciónalos y crearemos tu transferencia XRD con validaciones automáticas! Y si quieres, después podrás generar códigos QR para facilitar el uso.`
                 }
