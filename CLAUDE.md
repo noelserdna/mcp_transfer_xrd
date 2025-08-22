@@ -72,13 +72,13 @@ The server implements the MCP protocol with:
 - Formats: SVG (scalable) and PNG (universal compatibility)
 
 **deeplink_to_qr_local**: Generates QR codes as local PNG files for Claude Desktop compatibility
-- Parameters: `deeplink`, `tamaño` (optional, default: 512px), `calidad` (optional: 'high'), `directorio` (optional)
+- Parameters: `deeplink`, `tamaño` (optional, default: 1024px), `calidad` (optional: 'high'), `directorio` (optional)
 - Validation: Strict validation of Radix deep link protocols with enhanced error handling
 - Returns: Local PNG file path with metadata (hash, dimensions, file size, generation time)
 - Directory: Auto-creates `qrimages/` directory with automatic cleanup (7-day retention)
 - Filename: Unique SHA-256 based naming (`qr-{hash}-{timestamp}.png`) prevents duplicates
 - Quality: Optimized for mobile scanning with high error correction level (H)
-- Performance: <300ms generation time, <50KB file size target
+- Performance: <300ms generation time, optimized file size with high quality
 - Compatibility: Resolves Claude Desktop artifact rendering issues with Base64 QR codes
 
 **transferir_xrd** (Prompt): Interactive guide for XRD transfers with QR generation

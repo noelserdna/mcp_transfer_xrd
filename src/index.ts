@@ -426,12 +426,180 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `❌ **Error generando QR PNG local**\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\n💡 **Alternativa**: Puedes usar la herramienta \`deeplink_to_qr\` para obtener QR en Base64, aunque no sea compatible con artefactos de Claude Desktop.\n\n🔧 **Verificaciones**:\n• Deep link válido de Radix Wallet\n• Permisos de escritura en directorio del proyecto\n• Espacio disponible en disco\n• Tamaño entre 128-2048 píxeles`,
+            text: `❌ **Error generando QR PNG local**\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\n💡 **Soluciones**:\n• Si el deep link es muy largo (>1500 chars), es normal - el sistema optimiza automáticamente\n• Usa tamaño mayor (1024px o 2048px) para URLs largas\n• Verifica que el deep link comience con \`radixwallet://\`\n\n🔧 **Verificaciones**:\n• Deep link válido de Radix Wallet\n• Permisos de escritura en directorio del proyecto\n• Espacio disponible en disco`,
           },
         ],
       };
     }
   },
+);
+
+// Import for QR terminal testing
+import { qrTerminalRenderer, QRTerminalOptions } from './helpers/qr-terminal-renderer.js';
+
+// Define Zod schema for QR terminal testing
+const TestQRTerminalSchema = {
+  deeplink: z.string().describe("Deep link de Radix Wallet para testing con qrcode-terminal"),
+  modo: z.enum(['render', 'compare', 'validate', 'demo']).optional()
+    .describe("Modo de testing: render (mostrar), compare (comparar), validate (validar), demo (demostración)"),
+  opciones: z.object({
+    pequeño: z.boolean().optional().describe("Usar QR pequeño para terminal"),
+    inverso: z.boolean().optional().describe("Invertir colores del QR"),
+    margen: z.number().min(0).max(10).optional().describe("Margen alrededor del QR"),
+    colorear: z.boolean().optional().describe("Usar colores ANSI en el terminal")
+  }).optional(),
+  comparar_con: z.array(z.enum(['local_png', 'base64_png'])).optional()
+    .describe("Métodos para comparación: local_png, base64_png")
+};
+
+server.tool(
+  "test_qr_terminal",
+  "Sistema completo de testing QR con qrcode-terminal, comparaciones y validaciones para testing inmediato",
+  TestQRTerminalSchema,
+  async (params) => {
+    try {
+      const { deeplink, modo = 'render', opciones = {}, comparar_con = [] } = params;
+      
+      console.error("DEBUG - QR Terminal Test iniciado:", JSON.stringify(params, null, 2));
+      
+      // Validar deep link básico
+      if (!deeplink || typeof deeplink !== 'string') {
+        return {
+          content: [{
+            type: "text",
+            text: "❌ **Error**: Deep link requerido y debe ser una string válida"
+          }]
+        };
+      }
+
+      // Configurar opciones de renderizado
+      const terminalOptions: QRTerminalOptions = {
+        small: opciones.pequeño ?? false,
+        inverse: opciones.inverso ?? false,
+        margin: opciones.margen ?? 1,
+        colorize: opciones.colorear ?? true
+      };
+
+      // Analizar deep link
+      const analysis = {
+        length: deeplink.length,
+        protocol: deeplink.startsWith('radixwallet://') ? 'radixwallet://' : 
+                 deeplink.startsWith('https://wallet.radixdlt.com/') ? 'wallet.radixdlt.com' : 'desconocido',
+        recommendedConfig: deeplink.length < 400 ? 'Error correction H' :
+                          deeplink.length < 800 ? 'Error correction M' :
+                          deeplink.length < 1200 ? 'Error correction L' : 'Error correction L + optimizaciones'
+      };
+
+      let responseText = `## 🔬 QR Terminal Testing\n\n`;
+      responseText += `**Deep link analizado:**\n`;
+      responseText += `📏 Longitud: ${analysis.length} caracteres\n`;
+      responseText += `🔗 Protocolo: ${analysis.protocol}\n`;
+      responseText += `💡 Configuración recomendada: ${analysis.recommendedConfig}\n\n`;
+
+      // Ejecutar según modo
+      switch (modo) {
+        case 'render':
+          await qrTerminalRenderer.renderDirectToTerminal(deeplink, terminalOptions);
+          responseText += `✅ **QR renderizado en terminal**\n\n`;
+          responseText += `📊 **Configuración aplicada:**\n`;
+          responseText += `• Tamaño pequeño: ${terminalOptions.small ? 'Sí' : 'No'}\n`;
+          responseText += `• Colores invertidos: ${terminalOptions.inverse ? 'Sí' : 'No'}\n`;
+          responseText += `• Margen: ${terminalOptions.margin}\n`;
+          responseText += `• Colores ANSI: ${terminalOptions.colorize ? 'Sí' : 'No'}\n\n`;
+          break;
+
+        case 'compare':
+          // Renderizar con terminal
+          await qrTerminalRenderer.renderDirectToTerminal(deeplink, terminalOptions);
+          responseText += `✅ **QR terminal renderizado arriba**\n\n`;
+          
+          // Comparar con otros métodos si solicitado
+          if (comparar_con.includes('local_png')) {
+            try {
+              const localResult = await localQRManager.generateQRLocal(deeplink);
+              responseText += `📁 **Comparación PNG local:** ${localResult.archivo_path}\n`;
+              responseText += `📊 Tamaño: ${(localResult.tamaño_bytes / 1024).toFixed(1)} KB\n`;
+            } catch (error) {
+              responseText += `❌ **Error PNG local:** ${error instanceof Error ? error.message : 'Error desconocido'}\n`;
+            }
+          }
+          
+          if (comparar_con.includes('base64_png')) {
+            try {
+              const base64Result = await qrGenerator.generateQR({ deeplink, formato: 'png' });
+              responseText += `📄 **Comparación Base64:** Generado exitosamente\n`;
+              responseText += `⏱️ Timestamp: ${base64Result.metadatos.timestamp}\n`;
+            } catch (error) {
+              responseText += `❌ **Error Base64:** ${error instanceof Error ? error.message : 'Error desconocido'}\n`;
+            }
+          }
+          break;
+
+        case 'validate':
+          // Validar compatibilidad del terminal
+          const compatibility = qrTerminalRenderer.validateTerminalCompatibility();
+          responseText += `🔍 **Validación de Compatibilidad:**\n\n`;
+          responseText += `✅ Compatible: ${compatibility.compatible ? 'Sí' : 'No'}\n`;
+          responseText += `🎨 Colores ANSI: ${compatibility.features.ansiColors ? 'Soportado' : 'No soportado'}\n`;
+          responseText += `🔤 Unicode: ${compatibility.features.unicodeSupport ? 'Soportado' : 'No soportado'}\n`;
+          responseText += `📐 Tamaño fuente: ${compatibility.features.fontSize}\n\n`;
+          
+          if (compatibility.recommendations.length > 0) {
+            responseText += `💡 **Recomendaciones:**\n`;
+            compatibility.recommendations.forEach(rec => {
+              responseText += `• ${rec}\n`;
+            });
+          }
+          
+          // Renderizar QR después de validación
+          await qrTerminalRenderer.renderDirectToTerminal(deeplink, terminalOptions);
+          break;
+
+        case 'demo':
+          responseText += `🎯 **Demo Interactivo - Múltiples Configuraciones**\n\n`;
+          
+          // Demo con configuración normal
+          responseText += `### Configuración Normal:\n`;
+          await qrTerminalRenderer.renderDirectToTerminal(deeplink, { small: false, inverse: false });
+          
+          responseText += `### Configuración Compacta:\n`;
+          await qrTerminalRenderer.renderDirectToTerminal(deeplink, { small: true, inverse: false });
+          
+          responseText += `### Configuración Inversa:\n`;
+          await qrTerminalRenderer.renderDirectToTerminal(deeplink, { small: false, inverse: true });
+          
+          responseText += `✅ **Demo completado** - Revisa los QR generados arriba\n`;
+          break;
+      }
+
+      responseText += `\n📱 **Instrucciones:**\n`;
+      responseText += `1. Escanea cualquier QR mostrado arriba con tu móvil\n`;
+      responseText += `2. Verifica que abre Radix Wallet correctamente\n`;
+      responseText += `3. Confirma que la transacción es la esperada\n\n`;
+      
+      responseText += `🔧 **Para testing adicional:**\n`;
+      responseText += `• Usa \`debug-qr-terminal.js\` para testing interactivo\n`;
+      responseText += `• Prueba con diferentes configuraciones usando 'opciones'\n`;
+      responseText += `• Compara métodos usando 'comparar_con'`;
+
+      return {
+        content: [{
+          type: "text",
+          text: responseText
+        }]
+      };
+
+    } catch (error) {
+      console.error("DEBUG - Error en test_qr_terminal:", error);
+      
+      return {
+        content: [{
+          type: "text",
+          text: `❌ **Error en testing QR terminal**\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\n💡 **Verificaciones:**\n• Deep link válido de Radix Wallet\n• Terminal compatible con Unicode\n• qrcode-terminal instalado correctamente`
+        }]
+      };
+    }
+  }
 );
 
 server.prompt(
@@ -452,96 +620,25 @@ server.prompt(
           role: "user",
           content: {
             type: "text",
-            text: `# Transferir XRD en Stokenet con Validaciones Automáticas
+            text: `# Transferir XRD en Stokenet
 
-¡Perfecto! Vamos a crear una transferencia sencilla de XRD entre wallets en la red Stokenet con verificaciones automáticas de seguridad.
-
-## Datos para la transferencia:
+## Datos requeridos:
 
 ${fromAddress ? `✅ **Wallet Origen**: ${fromAddress}` : '❌ **Wallet Origen**: *Requerido*'}
 ${toAddress ? `✅ **Wallet Destino**: ${toAddress}` : '❌ **Wallet Destino**: *Requerido*'}  
 ${amount ? `✅ **Cantidad**: ${amount} XRD` : '❌ **Cantidad**: *Requerido*'}
-${message ? `📝 **Mensaje**: ${message}` : '📝 **Mensaje**: Sin mensaje'}
+${message ? `📝 **Mensaje**: ${message}` : '📝 **Mensaje**: Opcional'}
 
-## 🛡️ Validaciones Automáticas Habilitadas:
+## Formato:
 
-Nuestro sistema ahora incluye verificaciones automáticas para mayor seguridad:
+- **Direcciones**: \`account_tdx_2_...\` (formato Stokenet)
+- **Cantidad**: Número decimal (ej: \`10\`, \`5.5\`, \`0.1\`)
 
-- ✅ **Validación de Direcciones**: Verificamos que ambas direcciones sean válidas para Stokenet
-- ✅ **Verificación de Balance**: Comprobamos que tengas suficientes XRD antes de generar la transacción
-- ✅ **Detección Temprana de Errores**: Identificamos problemas antes de abrir la wallet
-- ✅ **Mensajes Informativos**: Te mostramos el estado de tu balance y validaciones
+## Pasos a seguir:
 
-## Instrucciones:
-
-1. **Wallet Origen**: Proporciona la dirección de tu wallet desde la cual quieres enviar XRD
-   - Formato: \`account_tdx_2_...\`
-   - Ejemplo: \`account_tdx_2_1289zm062j788dwrjefqkfgfeea5tkkdnh8htqhdrzdvjkql4kxceql\`
-
-2. **Wallet Destino**: Proporciona la dirección de la wallet que recibirá los XRD  
-   - Formato: \`account_tdx_2_...\`
-   - Ejemplo: \`account_tdx_2_128evrrwfp8gj9240qq0m06ukhwaj2cmejluxxreanzjwq62hdkqlq\`
-
-3. **Cantidad**: Especifica cuántos XRD quieres transferir
-   - Ejemplos: \`10\`, \`5.5\`, \`0.1\`
-
-4. **Mensaje** (opcional): Agrega una nota descriptiva para la transferencia
-
-## ¿Qué sucede después?
-
-Una vez que proporciones todos los datos requeridos:
-
-1. 🔍 **Validaciones automáticas**: Verificaremos direcciones y balance
-2. ✅ **Confirmación de estado**: Te mostraremos el resultado de las validaciones  
-3. 📱 **Deep link generado**: Si todo está correcto, generaremos el enlace para Radix Wallet
-4. 🔐 **Firma en wallet**: Podrás revisar y firmar la transacción de forma segura
-
-## 💡 Beneficios de las Validaciones:
-
-- **Evita errores**: Detectamos direcciones inválidas antes de procesar
-- **Verifica fondos**: Comprobamos que tengas balance suficiente
-- **Ahorra tiempo**: Identificamos problemas sin abrir la wallet
-- **Mayor seguridad**: Validaciones adicionales antes de firmar
-
-## 📱 Generar Código QR (Paso Recomendado)
-
-Una vez que tengas tu deep link de transferencia XRD, **recomendamos encarecidamente** convertirlo a código QR local para una experiencia optimizada en Claude Desktop:
-
-### 🎯 **Opción Recomendada**: \`deeplink_to_qr_local\` (NUEVO)
-
-**✨ Características Premium**:
-- 🖼️ **Compatible con Claude Desktop**: Archivos PNG renderizables como artefactos sin problemas
-- 📱 **Calidad optimizada**: 512px por defecto, ideal para escaneado móvil confiable
-- 💾 **Archivos persistentes**: Guardado en \`qrimages/\` para reutilización y compartir
-- 🔄 **Gestión inteligente**: Nombres únicos evitan duplicados, limpieza automática
-- ⚡ **Performance superior**: <300ms generación, <50KB archivos, error correction nivel H
-
-**💡 Casos de uso ideales**:
-- 📲 **Claude Desktop**: Renderizar QR como artefactos sin pérdida de contexto
-- 💼 **Uso profesional**: Archivos PNG de alta calidad para documentación
-- 🔄 **Reutilización**: Archivos guardados para referencia futura
-- 📤 **Compartir fácil**: Enviar archivos PNG directamente a otros dispositivos
-
-### 🔧 **Opción Alternativa**: \`deeplink_to_qr\` (Clásica)
-
-**📊 Características Base64**:
-- 📄 **Formato clásico**: SVG escalable y PNG Base64 para integración web
-- 🖥️ **Aplicaciones web**: Datos embebidos como \`data:image/png;base64,<código>\`
-- 📋 **Múltiples formatos**: SVG + PNG simultáneamente
-- 💻 **Entornos no-Desktop**: Para uso fuera de Claude Desktop
-
-**📋 Workflow Recomendado**:
-1. 🔨 **Generar transacción**: Usa \`xrd_transaccion\` para crear tu deep link
-2. ⭐ **Crear QR local**: Usa \`deeplink_to_qr_local\` para archivo PNG optimizado
-3. 📱 **¡Escanear y usar!**: El archivo PNG es compatible con cualquier lector QR móvil
-
-**🎯 ¿Por qué \`deeplink_to_qr_local\`?**
-- ✅ **Sin problemas de renderizado** en Claude Desktop (resuelve limitaciones Base64)
-- ✅ **Mayor calidad visual** para escaneado móvil
-- ✅ **Persistencia de archivos** para uso posterior
-- ✅ **Optimizado para transacciones Radix** con configuración específica
-
-¿Tienes todos los datos listos? ¡Proporciónalos y crearemos tu transferencia XRD con validaciones automáticas! Y si quieres, después podrás generar códigos QR para facilitar el uso.`
+1. **Generar deep link**: Usa \`xrd_transaccion\` con los datos requeridos
+2. **Crear QR local**: Usa \`deeplink_to_qr_local\` con el deep link obtenido
+3. **Abrir imagen**: Usa \`Powershell-Tool\` con \`Start-Process "ms-photos:viewer?fileName=<path_archivo>"\` para visualizar el QR`
           }
         }
       ]

@@ -4,13 +4,13 @@
 export interface DeepLinkToQRParams {
   deeplink: string;
   formato?: 'svg' | 'png' | 'both';
-  tamaño?: number; // Para PNG, default: 256px
+  tamaño?: number; // Para PNG, default: 512px (optimizado para mejor legibilidad)
 }
 
 // Extensión para soporte de generación local de archivos PNG
 export interface DeepLinkToQRLocalParams {
   deeplink: string;
-  tamaño?: number; // Para PNG, default: 512px (mayor para mejor escaneado)
+  tamaño?: number; // Para PNG, default: 1024px (alta resolución para óptimo escaneado móvil)
   calidad?: 'low' | 'medium' | 'high' | 'max';
   directorio?: string; // Directorio personalizado, default: qrimages
 }
@@ -67,14 +67,14 @@ export enum FormatoQR {
 
 // Constantes de configuración
 export const QR_CONFIG_DEFAULT: QRConfig = {
-  errorCorrectionLevel: 'M', // Nivel medio para deep links largos
-  margin: 4,
+  errorCorrectionLevel: 'L', // Nivel bajo para maximizar capacidad de datos con URLs muy largas
+  margin: 4, // Margin reducido para más espacio de datos
   color: {
     dark: '#000000',
     light: '#FFFFFF'
   }
 };
 
-export const QR_SIZE_DEFAULT = 256; // Tamaño PNG por defecto
-export const QR_LOCAL_SIZE_DEFAULT = 512; // Tamaño PNG local por defecto (mayor para mejor escaneado)
+export const QR_SIZE_DEFAULT = 512; // Tamaño PNG por defecto (aumentado para mejor legibilidad)
+export const QR_LOCAL_SIZE_DEFAULT = 1024; // Tamaño PNG local por defecto (alta resolución para óptimo escaneado)
 export const QR_LOCAL_DIR_DEFAULT = 'qrimages'; // Directorio por defecto para archivos locales

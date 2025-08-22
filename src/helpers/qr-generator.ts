@@ -47,15 +47,30 @@ export class QRGenerator {
     }
 
     try {
-      const svgString = await QRCode.toString(deeplink, {
-        type: 'svg',
+      // Para deep links muy largos, usar configuración optimizada para máxima capacidad
+      let config = {
+        type: 'svg' as const,
         errorCorrectionLevel: this.config.errorCorrectionLevel,
         margin: this.config.margin,
         color: this.config.color
-      });
+      };
 
+      // Si el deep link es muy largo (>800 chars), optimizar para capacidad máxima
+      if (deeplink.length > 800) {
+        config = {
+          type: 'svg' as const,
+          errorCorrectionLevel: 'L' as const, // Mínima corrección para maximizar datos
+          margin: 1, // Mínimo margin
+          color: this.config.color
+        };
+      }
+
+      const svgString = await QRCode.toString(deeplink, config);
       return svgString;
     } catch (error) {
+      if (error instanceof Error && error.message.includes('too big')) {
+        throw new Error(`Deep link demasiado largo para QR (${deeplink.length} caracteres). Los códigos QR tienen un límite de capacidad de datos. Considera usar un acortador de URLs o reduce el contenido del manifest.`);
+      }
       throw new Error(`Error generando SVG: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
@@ -73,15 +88,30 @@ export class QRGenerator {
     }
 
     try {
-      const pngBuffer = await QRCode.toBuffer(deeplink, {
+      // Para deep links muy largos, usar configuración optimizada para máxima capacidad
+      let config = {
         errorCorrectionLevel: this.config.errorCorrectionLevel,
         margin: this.config.margin,
         color: this.config.color,
         width: size
-      });
+      };
 
+      // Si el deep link es muy largo (>800 chars), optimizar para capacidad máxima
+      if (deeplink.length > 800) {
+        config = {
+          errorCorrectionLevel: 'L' as const, // Mínima corrección para maximizar datos
+          margin: 1, // Mínimo margin
+          color: this.config.color,
+          width: size
+        };
+      }
+
+      const pngBuffer = await QRCode.toBuffer(deeplink, config);
       return pngBuffer.toString('base64');
     } catch (error) {
+      if (error instanceof Error && error.message.includes('too big')) {
+        throw new Error(`Deep link demasiado largo para QR (${deeplink.length} caracteres). Los códigos QR tienen un límite de capacidad de datos. Considera usar un acortador de URLs o reduce el contenido del manifest.`);
+      }
       throw new Error(`Error generando PNG: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }

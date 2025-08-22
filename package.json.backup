@@ -10,8 +10,7 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
-    "debug:qr": "node debug-qr-terminal.js",
-    "test:qr": "node debug-qr-terminal.js",
+    "debug:qr": "node scripts/debug-qr-terminal.js",
     "benchmark:qr": "node scripts/benchmark-configs.js",
     "validate:qr": "node scripts/validate-qr-content.js",
     "demo:qr": "node scripts/interactive-demo.js"
@@ -20,9 +19,11 @@
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@radixdlt/babylon-gateway-api-sdk": "^1.10.1",
     "@radixdlt/radix-dapp-toolkit": "^2.2.1",
+    "@types/qrcode-terminal": "^0.12.2",
     "axios": "^1.11.0",
     "decimal.js": "^10.6.0",
     "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
     "radix-connect": "^0.3.0",
     "zod": "^3.25.76"
   },
