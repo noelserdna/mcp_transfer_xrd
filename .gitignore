@@ -1,6 +1,98 @@
+# Dependencies
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
 build/
 dist/
+*.tsbuildinfo
+
+# Environment and secrets
 .env
+.env.local
+.env.production
+.env.test
+*.pem
+*.key
+
+# Logs
 *.log
+logs/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like nyc
+coverage/
+*.lcov
+
+# Testing
+.vitest-cache/
+test-results/
+playwright-report/
+test-results.xml
+
+# QR Images (generated files)
+qrimages/
+ClaudeQRs/
+relative-qr/
+
+# Development and testing scripts
+debug-qr-terminal.js
+quick-qr-test.js
+test-mcp-qr.js
+package.json.backup
+
+# Development documentation and analysis (keep investigaciones/ for production reference)
+docs/qr-testing/
+docs/qr-local-png-generation/
+analysis/
+architecture/
+risks/
+task/
+tasks/
+timelines/
+tracking/
+
+# Scripts directory (development tools)
+scripts/
+
+# Testing directories
+tests/qr-terminal/
+src/testing/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Screenshots and captures
+*.png
+*.PNG
+*.jpg
+*.jpeg
+Captura.PNG
+
+# Legacy and experimental
 rust_worker/
