@@ -28,6 +28,12 @@ npx vitest tests/echo-tool.test.ts        # Run echo tool unit tests
 npx vitest tests/deeplink-to-qr.test.ts   # Run QR generation unit tests
 ```
 
+### QR Testing Commands (Development)
+```bash
+npm run debug:qr    # Interactive QR terminal debugging
+npm run test:qr     # Quick QR testing with sample data
+```
+
 ## Architecture
 
 ### MCP Server Structure (src/index.ts)
@@ -39,9 +45,10 @@ The server implements the MCP protocol with:
    - Creates relay transport for deep link generation
    - Manages transaction request callbacks
    - Generates transaction manifests for XRD transfers
-3. **Tool Registration**: Registers `xrd_transaccion`, `deeplink_to_qr` and `deeplink_to_qr_local` tools with Zod validation
-4. **QRGenerator Helper**: Manages QR code generation with SVG/PNG support
+3. **Tool Registration**: Registers `xrd_transaccion`, `deeplink_to_qr`, `deeplink_to_qr_local` and `test_qr_terminal` tools with Zod validation
+4. **QRGenerator Helper**: Manages QR code generation with SVG/PNG support and optimizations for long deep links
 5. **LocalQRManager Helper**: Manages local PNG file generation for Claude Desktop compatibility
+6. **QRTerminalRenderer Helper**: Handles terminal-based QR rendering with qrcode-terminal integration
 6. **Prompt Registration**: Registers `transferir_xrd` prompt for guided transfers
 
 ### RadixDLT Integration
@@ -80,6 +87,14 @@ The server implements the MCP protocol with:
 - Quality: Optimized for mobile scanning with high error correction level (H)
 - Performance: <300ms generation time, optimized file size with high quality
 - Compatibility: Resolves Claude Desktop artifact rendering issues with Base64 QR codes
+
+**test_qr_terminal**: Sistema completo de testing QR con qrcode-terminal para development
+- Parameters: `deeplink`, `modo` (optional: 'render', 'compare', 'validate', 'demo'), `opciones` (configuración de renderizado), `comparar_con` (optional: ['local_png', 'base64_png'])
+- Validation: Análisis automático de deep links con recomendaciones de configuración
+- Returns: QR renderizado directamente en terminal con análisis de compatibilidad
+- Modes: render (mostrar), compare (comparar métodos), validate (verificar terminal), demo (múltiples configuraciones)
+- Features: Terminal compatibility detection, performance analysis, configuration recommendations
+- Development: Essential for debugging QR generation issues and terminal compatibility testing
 
 **transferir_xrd** (Prompt): Interactive guide for XRD transfers with QR generation
 - Provides Spanish instructions for wallet addresses and amounts
@@ -180,5 +195,23 @@ Contiene toda la documentación técnica generada por sub-agentes de investigaci
 
 **NOTA IMPORTANTE**: Las investigaciones de GitHub Integration (Fase 1) proporcionan un plan completo de migración que debe ser consultado antes de realizar cambios significativos al código actual.
 
-### Carpeta `task/`
-Contiene planes detallados de implementación y seguimiento de progreso
+## Development Tools and Scripts
+
+### QR Testing Infrastructure
+El proyecto incluye un sistema completo de testing QR para development:
+
+- **test_qr_terminal tool**: Herramienta MCP integrada para testing inmediato
+- **QRTerminalRenderer**: Sistema de renderizado terminal con validación de compatibilidad  
+- **Scripts de debugging**: Herramientas interactivas para desarrollo y troubleshooting
+- **Múltiples modos**: render, compare, validate, demo para diferentes casos de uso
+
+### .gitignore Optimizado
+El repositorio mantiene separación clara entre archivos de producción y desarrollo:
+- Excluye archivos temporales (`qrimages/`, scripts de debug, documentación temporal)
+- Mantiene código fuente esencial y documentación técnica (`investigaciones/`)
+- Optimizado para deployment limpio y desarrollo local sin conflictos
+
+### Estructura Limpia de Producción
+- Solo archivos esenciales en el repositorio
+- Documentación técnica consolidada en `investigaciones/`
+- Development tools locales sin tracking de git
